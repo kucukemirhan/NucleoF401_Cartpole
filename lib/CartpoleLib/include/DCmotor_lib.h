@@ -4,6 +4,7 @@
 #include "Encoder_lib.h"
 #include "TIM_lib.h"
 #include "GPIO_lib.h"
+#include <cmath>
 
 // This version of the DCmotor class accepts pre-constructed objects.
 // It uses:
@@ -13,32 +14,34 @@
 class DCmotor {
 public:
     // Constructor accepts references to already configured objects.
-    DCmotor(EncoderIT &encoder, TimPWM &pwm, DigitalOut &direction);
+    DCmotor(EncoderIT &encoder, TimPWM &forwardPWM, TimPWM &reversePWM, TimIC &captureTimer);
     ~DCmotor();
 
-    // Set the target position (in steps).
-    void setTargetPosition(int32_t position);
-
-    // Set the stepping speed (in steps per second).
-    void setSpeed(uint16_t stepsPerSecond);
-
-    // Call periodically to update motor control.
-    void update();
+    void setTargetPosition(int32_t position); // in steps
+    void setTargetSpeed(float rpm); // in rpm
 
     // Get the current position.
-    int32_t getCurrentPosition();
+    int64_t getCurrentPosition();
+    float getCurrentSpeed();
 
-    // Stop the motor movement.
+    void setSpeed(float rpm, bool dir);
+
+    // call periodically to update
+    void updateSpeed();
+    void updatePosition();
+
+    void start(bool dir);
     void stop();
 
 private:
     EncoderIT &encoder;
-    TimPWM &pwm;
-    DigitalOut &direction;
+    TimPWM &forwardPWM;
+    TimPWM &reversePWM;
+    TimIC &captureTimer;
 
-    int32_t targetPosition;  // Desired position in steps
-    uint16_t speed;          // Stepping speed (steps per second)
-    bool isPwmRunning;       // Flag to track if PWM is already active
+    int64_t targetPosition;  // Desired position in steps
+    float targetSpeed;       // desired speed (rpm)
+    bool isPwmRunning;
 };
 
 #endif // /* INC_STEPPER_LIB_H_ */

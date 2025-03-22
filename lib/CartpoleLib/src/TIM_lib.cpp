@@ -194,6 +194,22 @@ void TimPWM::setPSC(uint16_t psc)
     _Instance->PSC = psc;
 }
 
+void TimPWM::setDutyCycle(float dutyCycle)
+{
+    if (dutyCycle < 0.0f)
+    {
+        dutyCycle = 0.0f;
+    }
+    else if (dutyCycle > 100.0f)
+    {
+        dutyCycle = 100.0f;
+    }
+
+    uint16_t arr = _Instance->ARR;
+    uint16_t ccr_value = static_cast<uint16_t>((dutyCycle / 100.0f) * arr);
+    _Instance->CCR1 = ccr_value;
+}
+
 void TimPWM::setFrequency(uint16_t frequency)
 {
     if (frequency != 0)
@@ -280,7 +296,14 @@ float TimIC::getSpeed(void)
         return 0.0f;  // Return 0 speed if no valid period measured
     }
 
-    float revPerSec = pulsesPerRevolution / ((float)pulsePeriod * (timerTickTime_us / 1e6f));
+    // Timer count'u saniyeye çevir
+    float pulsePeriodSec = (float)pulsePeriod * (timerTickTime_us / 1e6f);
+
+    // Bir tam dönüş için geçen süreyi hesapla
+    float revolutionTimeSec = pulsePeriodSec * pulsesPerRevolution;
+
+    // Saniyedeki dönüş sayısını (RPS) hesapla
+    float revPerSec = 1.0f / revolutionTimeSec;
     
     return revPerSec; 
 }

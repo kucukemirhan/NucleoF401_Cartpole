@@ -135,9 +135,16 @@ int main(void)
     // encoder1_speed = encCaptureTimer1.getSpeed();
     encoder2_speed = encCaptureTimer2.getSpeed();
 
-
     // Format the speed values into a string
     // sprintf(uart_buffer, "E1: %ld, E2: %ld\r\n", (long)encoder1_speed, (long)encoder2_speed);
+
+    sniprintf(uart_buffer, sizeof(uart_buffer), 
+    "capture: %u, lastcapture: %u, period: %u, speed: %.2f\r\n", 
+    encCaptureTimer2.capture, 
+    encCaptureTimer2.lastCapture, 
+    encCaptureTimer2.pulsePeriod, 
+    encCaptureTimer2.getSpeed());
+
     uart1.write((uint8_t*)uart_buffer, strlen(uart_buffer));
     HAL_Delay(100);
     

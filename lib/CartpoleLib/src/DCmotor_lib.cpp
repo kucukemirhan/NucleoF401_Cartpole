@@ -1,12 +1,13 @@
 #include "DCmotor_lib.h"
 
-DCmotor::DCmotor(EncoderIT &enc, TimPWM &pwmTimer, DigitalOut &dir)
-    : encoder(enc),
-      pwm(pwmTimer),
-      direction(dir),
-      targetPosition(0),
-      speed(0),
-      isPwmRunning(false)
+DCmotor::DCmotor(EncoderIT &encoder, TimPWM &forward, TimPWM &reverse, TimIC &capture) :
+encoder(encoder),
+forwardPWM(forward),
+reversePWM(reverse),
+captureTimer(capture),
+targetPosition(0),
+targetSpeed(0),
+isPwmRunning(false)
 {
     // Assume the injected objects are pre-configured.
 }
@@ -19,50 +20,88 @@ void DCmotor::setTargetPosition(int32_t position) {
     targetPosition = position;
 }
 
-void DCmotor::setSpeed(uint16_t stepsPerSecond) {
-    speed = stepsPerSecond;
-    pwm.setFrequency(stepsPerSecond);
+void DCmotor::setTargetSpeed(float revPerMin) {
+    targetSpeed = revPerMin;
 }
 
-int32_t DCmotor::getCurrentPosition() {
+int64_t DCmotor::getCurrentPosition() {
     return encoder.read();
 }
 
-void DCmotor::update() {
-    int32_t currentPos = getCurrentPosition();
+float DCmotor::getCurrentSpeed() {
+    return captureTimer.getSpeed();
+}
 
-    if (currentPos < targetPosition) {
-        // For forward movement: set the proper direction.
-        direction.write(GPIO_PIN_SET);
-        pwm.setFrequency(speed);
-        // Only start PWM if it isn't already running.
-        if (!isPwmRunning) {
-            pwm.start();
-            isPwmRunning = true;
-        }
+void DCmotor::setSpeed(float rpm, bool dir) { // maps rpm to 0-100
+    if (rpm < 0.0f) {
+        rpm = 0.0f;
     }
-    else if (currentPos > targetPosition) {
-        // For reverse movement: set the proper direction.
-        direction.write(GPIO_PIN_RESET);
-        pwm.setFrequency(speed);
-        // Only start PWM if it isn't already running.
-        if (!isPwmRunning) {
-            pwm.start();
-            isPwmRunning = true;
-        }
+    else if (rpm > 200.0f) {
+        rpm = 200.0f;
     }
-    else {
-        // Target position reached: stop PWM if it is running.
-        if (isPwmRunning) {
-            pwm.stop();
-            isPwmRunning = false;
-        }
+
+    rpm = rpm * 100 / 200.0f;
+
+    if (dir) {
+        forwardPWM.setDutyCycle(rpm);
+    }
+    else if (!dir) {
+        reversePWM.setDutyCycle(rpm);
     }
 }
 
-void DCmotor::stop() {
+void DCmotor::updateSpeed() {
+    float currentSpeed = getCurrentSpeed();
+
+    float error = targetSpeed - currentSpeed;
+    if (std::abs(error) <= 1) {
+        this->stop();
+        return;
+    }
+
+    uint8_t dir = (error >= 0) ? 1 : 0;
+
+    // Basit oransal kontrol
+    const float Kp = 1.0f;
+    float command = Kp * std::abs(error);
+    
+    // Komut pozitifse ileri, negatifse ters yönde çalıştır
+    setSpeed(command, dir);
+    start(dir);
+}
+
+void DCmotor::updatePosition() {
+    int64_t currentPosition = getCurrentPosition();
+
+    int64_t error = targetPosition - currentPosition;
+    if (std::abs(error) <= 10) {
+        this->stop();
+        return;
+    }
+
+    uint8_t dir = (error >= 0) ? 1 : 0;
+    updateSpeed();
+}
+
+void DCmotor::start(bool dir)
+{
+    if (dir) {
+        reversePWM.stop();
+        forwardPWM.start();
+        isPwmRunning = true;
+    } 
+    else if (!dir) {
+        forwardPWM.stop();
+        reversePWM.start();
+        isPwmRunning = true;
+    }
+}
+
+void DCmotor::stop() 
+{
     if (isPwmRunning) {
-        pwm.stop();
+        forwardPWM.stop();
+        reversePWM.stop();
         isPwmRunning = false;
     }
 }
