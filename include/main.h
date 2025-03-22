@@ -67,8 +67,6 @@ void Error_Handler(void);
 #define ReverseEnable_GPIO_Port GPIOB
 #define ForwardEnable_Pin GPIO_PIN_1
 #define ForwardEnable_GPIO_Port GPIOB
-#define RPWM_Pin GPIO_PIN_8
-#define RPWM_GPIO_Port GPIOA
 #define ENC1_CH2_Pin GPIO_PIN_3
 #define ENC1_CH2_GPIO_Port GPIOB
 #define LPWM_Pin GPIO_PIN_6

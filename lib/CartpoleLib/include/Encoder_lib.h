@@ -36,7 +36,7 @@ protected:
     static class ISR<EncoderIT> ISR_List;
 
 private:
-    const int32_t TIMER_MAX = 65536; // 16 bit timer
+    const int32_t TIMER_MAX = 65536; // 16 bit timer, şu an işe yaramıyor belki ileride koda eklerim diye koydum
     int64_t _overflow = 0;
     uint32_t rawCount = 0;
     

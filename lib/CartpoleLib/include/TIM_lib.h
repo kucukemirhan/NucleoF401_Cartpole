@@ -90,7 +90,7 @@ public:
 
     // Example parameters: encoder has 1024 pulses per revolution, and
     // TIM is set to count at 1MHz (1 tick = 1 microsecond).
-    const float pulsesPerRevolution = 1024.0f;
+    const float pulsesPerRevolution = 64.0f;
     const float timerTickTime_us = 1.0f;  // 1 µs tick
 
 private:

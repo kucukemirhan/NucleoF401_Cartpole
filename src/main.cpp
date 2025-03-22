@@ -21,8 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include "CartpoleLib.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,17 +81,17 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  DMA::init();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
-  MX_USART6_UART_Init();
+  MX_USART1_UART_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
@@ -105,7 +105,7 @@ int main(void)
   encCaptureTimer1.start();
   encCaptureTimer2.start();
 
-  TimPWM ReversePWM(TIM1, &htim1);
+  TimPWM ReversePWM(TIM3, &htim3);
   TimPWM ForwardPWM(TIM4, &htim4);
   ReversePWM.setFrequency(1000);
   ForwardPWM.setFrequency(1000);
@@ -113,7 +113,9 @@ int main(void)
   DigitalOut ReverseEnable(ReverseEnable_GPIO_Port, ReverseEnable_Pin);
   DigitalOut ForwardEnable(ForwardEnable_GPIO_Port, ForwardEnable_Pin);
 
-  UartDMA uart1(USART6, &huart6);
+  UartDMA uart1(USART1, &huart1);
+  uint8_t data[64] = {0};
+  char uart_buffer[64] = {0};
   uart1.start_read();
 
   int64_t encoder1_count = 0;
@@ -132,6 +134,26 @@ int main(void)
 
     // encoder1_speed = encCaptureTimer1.getSpeed();
     encoder2_speed = encCaptureTimer2.getSpeed();
+
+
+    // Format the speed values into a string
+    // sprintf(uart_buffer, "E1: %ld, E2: %ld\r\n", (long)encoder1_speed, (long)encoder2_speed);
+    uart1.write((uint8_t*)uart_buffer, strlen(uart_buffer));
+    HAL_Delay(100);
+    
+
+    // uint16_t len = uart1.read(data, sizeof(data));
+    // if (len > 0)
+    // {
+    //   while(!uart1.is_tx_complete());
+    //   if (uart1.is_tx_complete())
+    //   {
+    //     //uart1.write(data, len);
+    //     uart1.write((uint8_t*)uart_buffer, strlen(uart_buffer));
+    //   }
+    // }
+
+    
 
     /* USER CODE BEGIN 3 */
   }
