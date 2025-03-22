@@ -20,10 +20,6 @@ public:
 protected:
     TIM_TypeDef *_Instance;
     TIM_HandleTypeDef *_htim;
-
-private:
-    static bool is_init[TIM_COUNT];
-    void init(void);
 };
 
 class TimIT : public TimBase {
@@ -72,6 +68,33 @@ protected:
 private:
     static void PeriodElapsedCallback(TIM_HandleTypeDef *htim);
     
+};
+
+class TimIC : public TimBase {
+public:
+    TimIC(TIM_TypeDef *Instance, TIM_HandleTypeDef *htim, uint32_t Channel = TIM_CHANNEL_1);
+    ~TimIC(void);
+
+    HAL_StatusTypeDef start(void) override;
+    HAL_StatusTypeDef stop(void) override;
+    void captureValue(void);
+    float getSpeed(void);
+
+    protected:
+    static class ISR<TimIC> ISR_List;
+    uint32_t _Channel;
+    
+    uint32_t pulsePeriod = 0;
+    uint32_t capture = 0;
+    uint32_t lastCapture = 0;
+
+    // Example parameters: encoder has 1024 pulses per revolution, and
+    // TIM is set to count at 1MHz (1 tick = 1 microsecond).
+    const float pulsesPerRevolution = 1024.0f;
+    const float timerTickTime_us = 1.0f;  // 1 µs tick
+
+private:
+    static void IC_CaptureCallback(TIM_HandleTypeDef *htim);
 };
 
 #endif /* INC_TIM_LIB_H_ */

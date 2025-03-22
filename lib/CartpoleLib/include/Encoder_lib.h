@@ -20,9 +20,6 @@ protected:
     TIM_HandleTypeDef *_htim;
     uint32_t _Channel;
 
-private:
-    static bool is_init[ENCODER_COUNT];
-    void init(void);
 };
 
 //using interrupt to update the counter outside of its range
@@ -33,14 +30,15 @@ public:
 
     HAL_StatusTypeDef start(void) override; 
     HAL_StatusTypeDef stop(void) override;
-    int32_t read(void);
+    int64_t read(void);
 
 protected:
     static class ISR<EncoderIT> ISR_List;
 
 private:
-    int32_t _overflow = 0;
-    uint16_t rawCount = 0;
+    const int32_t TIMER_MAX = 65536; // 16 bit timer
+    int64_t _overflow = 0;
+    uint32_t rawCount = 0;
     
     static void PeriodElapsedCallback(TIM_HandleTypeDef *htim);
     void handleOverflow(void);

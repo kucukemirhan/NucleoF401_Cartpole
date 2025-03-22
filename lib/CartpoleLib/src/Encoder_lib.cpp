@@ -81,30 +81,29 @@ HAL_StatusTypeDef EncoderIT::stop(void)
     return HAL_TIM_Encoder_Stop_IT(_htim, _Channel);
 }
 
-int32_t EncoderIT::read(void) 
+int64_t EncoderIT::read(void) 
 {
     // Read the raw 16-bit hardware counter
     rawCount = __HAL_TIM_GET_COUNTER(_htim);
 
     // Combine with the overflow (multiply with 2^16)
-    int32_t fullCount = (_overflow << 16) + rawCount;
-    if (_overflow < 0) {
-        fullCount = ((_overflow + 1) << 16) - rawCount;
-    } // Adjusts for negative overflows
+    int64_t fullCount = (_overflow << 32) + rawCount;
     
     return fullCount;
 }
 
 void EncoderIT::handleOverflow(void)
 {
-    int32_t currentCounter = __HAL_TIM_GET_COUNTER(_htim);
-    if ((currentCounter - rawCount) > 32767)
+    uint32_t currentCounter = __HAL_TIM_GET_COUNTER(_htim);
+
+    if ((currentCounter - rawCount) > 32767) //aşağıdaki gibi casting yapınca çalışmadı  
     {
         _overflow--;
     } 
-    else if (currentCounter - rawCount < -32768)
+    else if (static_cast<int64_t>(currentCounter - rawCount) < -32768) 
     {
         _overflow++;
     }
+
     rawCount = currentCounter; // to prevent multiple overflow counts
 }

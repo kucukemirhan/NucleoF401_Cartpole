@@ -3,6 +3,7 @@
 
 ISR<TimIT> TimIT::ISR_List;
 ISR<TimPWM> TimPWM::ISR_List;
+ISR<TimIC> TimIC::ISR_List;
 
 void TimIT::PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -22,6 +23,17 @@ void TimPWM::PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (ISR_List.get(i)->_htim == htim)
         {
             ISR_List.get(i)->setPSC(1);
+        }
+    }
+}
+
+void TimIC::IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+    for (uint16_t i = 0; i < ISR_List.size(); i++)
+    {
+        if (ISR_List.get(i)->_htim == htim)
+        {
+            ISR_List.get(i)->captureValue();
         }
     }
 }
@@ -228,13 +240,47 @@ uint32_t TimPWM::getCNT(void)
     return _htim->Instance->CNT;
 }
 
-// void TimPWM::setPSC(uint16_t prescaler) 
-// {   
-//     if (_old_psc == prescaler)
-//     {
-//         return;
-//     }
-//     _htim->Instance->PSC = prescaler;
-//     _htim->Instance->EGR = TIM_EGR_UG; // generate update event
+TimIC::TimIC(TIM_TypeDef *Instance, TIM_HandleTypeDef *htim, uint32_t Channel):
+TimBase(Instance, htim), _Channel(TIM_CHANNEL_1) 
+{
+#if USE_HAL_TIM_REGISTER_CALLBACKS != 1
+#error "USE_HAL_TIM_REGISTER_CALLBACKS must be enabled in stm32f1xx_hal_conf.h"
+#endif
+    
+    htim->IC_CaptureCallback = IC_CaptureCallback;
+    ISR_List.add(this);
+}
 
-// }
+TimIC::~TimIC(void) 
+{
+
+}
+
+HAL_StatusTypeDef TimIC::start(void) 
+{
+    return HAL_TIM_IC_Start_IT(_htim, _Channel);
+}
+
+HAL_StatusTypeDef TimIC::stop(void) 
+{
+    return HAL_TIM_IC_Stop_IT(_htim, _Channel);
+}
+
+void TimIC::captureValue(void) 
+{
+    capture = HAL_TIM_ReadCapturedValue(_htim, _Channel);
+    pulsePeriod = capture - lastCapture;
+    lastCapture = capture;
+}
+
+float TimIC::getSpeed(void)
+{
+    if (pulsePeriod == 0)
+    {
+        return 0.0f;  // Return 0 speed if no valid period measured
+    }
+
+    float revPerSec = pulsesPerRevolution / ((float)pulsePeriod * (timerTickTime_us / 1e6f));
+    
+    return revPerSec; 
+}

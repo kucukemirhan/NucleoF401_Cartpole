@@ -57,18 +57,26 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define ENC2_CH1_Pin GPIO_PIN_6
+#define ENC2_CH1_Pin GPIO_PIN_0
 #define ENC2_CH1_GPIO_Port GPIOA
-#define ENC2_CH2_Pin GPIO_PIN_7
+#define ENC2_CH2_Pin GPIO_PIN_1
 #define ENC2_CH2_GPIO_Port GPIOA
-#define LPWM_Pin GPIO_PIN_6
-#define LPWM_GPIO_Port GPIOC
-#define RPWM_Pin GPIO_PIN_7
-#define RPWM_GPIO_Port GPIOC
-#define ENC1_CH1_Pin GPIO_PIN_8
+#define ENC1_CH1_Pin GPIO_PIN_5
 #define ENC1_CH1_GPIO_Port GPIOA
-#define ENC1_CH2_Pin GPIO_PIN_9
-#define ENC1_CH2_GPIO_Port GPIOA
+#define ReverseEnable_Pin GPIO_PIN_0
+#define ReverseEnable_GPIO_Port GPIOB
+#define ForwardEnable_Pin GPIO_PIN_1
+#define ForwardEnable_GPIO_Port GPIOB
+#define RPWM_Pin GPIO_PIN_8
+#define RPWM_GPIO_Port GPIOA
+#define ENC1_CH2_Pin GPIO_PIN_3
+#define ENC1_CH2_GPIO_Port GPIOB
+#define LPWM_Pin GPIO_PIN_6
+#define LPWM_GPIO_Port GPIOB
+#define InputCapture1_Pin GPIO_PIN_8
+#define InputCapture1_GPIO_Port GPIOB
+#define InputCapture2_Pin GPIO_PIN_9
+#define InputCapture2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

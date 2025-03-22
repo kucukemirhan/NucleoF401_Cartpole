@@ -1,6 +1,6 @@
-#include "Stepper_lib.h"
+#include "DCmotor_lib.h"
 
-StepperMotor::StepperMotor(EncoderIT &enc, TimPWM &pwmTimer, DigitalOut &dir)
+DCmotor::DCmotor(EncoderIT &enc, TimPWM &pwmTimer, DigitalOut &dir)
     : encoder(enc),
       pwm(pwmTimer),
       direction(dir),
@@ -11,24 +11,24 @@ StepperMotor::StepperMotor(EncoderIT &enc, TimPWM &pwmTimer, DigitalOut &dir)
     // Assume the injected objects are pre-configured.
 }
 
-StepperMotor::~StepperMotor() {
+DCmotor::~DCmotor() {
     stop();
 }
 
-void StepperMotor::setTargetPosition(int32_t position) {
+void DCmotor::setTargetPosition(int32_t position) {
     targetPosition = position;
 }
 
-void StepperMotor::setSpeed(uint16_t stepsPerSecond) {
+void DCmotor::setSpeed(uint16_t stepsPerSecond) {
     speed = stepsPerSecond;
     pwm.setFrequency(stepsPerSecond);
 }
 
-int32_t StepperMotor::getCurrentPosition() {
+int32_t DCmotor::getCurrentPosition() {
     return encoder.read();
 }
 
-void StepperMotor::update() {
+void DCmotor::update() {
     int32_t currentPos = getCurrentPosition();
 
     if (currentPos < targetPosition) {
@@ -60,7 +60,7 @@ void StepperMotor::update() {
     }
 }
 
-void StepperMotor::stop() {
+void DCmotor::stop() {
     if (isPwmRunning) {
         pwm.stop();
         isPwmRunning = false;

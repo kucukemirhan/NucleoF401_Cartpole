@@ -5,16 +5,16 @@
 #include "TIM_lib.h"
 #include "GPIO_lib.h"
 
-// This version of the StepperMotor class accepts pre-constructed objects.
+// This version of the DCmotor class accepts pre-constructed objects.
 // It uses:
 // - EncoderIT for position feedback,
-// - TimPWM for generating step pulses,
-// - DigitalOut for controlling the motor direction.
-class StepperMotor {
+// - 2 TimPWM for controlling the motor speed and direction,
+// - 2 DigitalOut for controlling the motor direction enable pins.
+class DCmotor {
 public:
     // Constructor accepts references to already configured objects.
-    StepperMotor(EncoderIT &encoder, TimPWM &pwm, DigitalOut &direction);
-    ~StepperMotor();
+    DCmotor(EncoderIT &encoder, TimPWM &pwm, DigitalOut &direction);
+    ~DCmotor();
 
     // Set the target position (in steps).
     void setTargetPosition(int32_t position);

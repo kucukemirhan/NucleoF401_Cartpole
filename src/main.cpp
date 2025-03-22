@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "MyStepperLib.h"
+#include "CartpoleLib.h"
 
 /* USER CODE END Includes */
 
@@ -88,10 +88,38 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_TIM1_Init();
-  MX_TIM3_Init();
-  MX_USART2_UART_Init();
+  MX_TIM2_Init();
+  MX_TIM4_Init();
+  MX_TIM5_Init();
+  MX_USART6_UART_Init();
+  MX_TIM10_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
+  EncoderIT encoder1(&htim2);
+  EncoderIT encoder2(&htim5);
+  encoder1.start();
+  encoder2.start();
 
+  TimIC encCaptureTimer1(TIM10, &htim10);
+  TimIC encCaptureTimer2(TIM11, &htim11);
+  encCaptureTimer1.start();
+  encCaptureTimer2.start();
+
+  TimPWM ReversePWM(TIM1, &htim1);
+  TimPWM ForwardPWM(TIM4, &htim4);
+  ReversePWM.setFrequency(1000);
+  ForwardPWM.setFrequency(1000);
+
+  DigitalOut ReverseEnable(ReverseEnable_GPIO_Port, ReverseEnable_Pin);
+  DigitalOut ForwardEnable(ForwardEnable_GPIO_Port, ForwardEnable_Pin);
+
+  UartDMA uart1(USART6, &huart6);
+  uart1.start_read();
+
+  int64_t encoder1_count = 0;
+  int64_t encoder2_count = 0;
+  float encoder1_speed = 0;
+  float encoder2_speed = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,6 +127,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+    // encoder1_count = encoder1.read();
+    encoder2_count = encoder2.read();
+
+    // encoder1_speed = encCaptureTimer1.getSpeed();
+    encoder2_speed = encCaptureTimer2.getSpeed();
 
     /* USER CODE BEGIN 3 */
   }
@@ -127,9 +160,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 84;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
