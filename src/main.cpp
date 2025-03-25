@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "CartpoleLib.h"
+#include "stm32_ros.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +45,7 @@
 
 /* USER CODE BEGIN PV */
 volatile uint8_t uartPrintFlag = 0;
+volatile uint8_t rosPrintFlag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -51,7 +53,18 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void myCustomCallback(TIM_HandleTypeDef *htim)
 {
-  uartPrintFlag = 1;
+  uartPrintFlag = 0;
+  rosPrintFlag = 1;
+}
+
+char* floatToStr(float value, int precision) {
+  static char buffer[20];  // Statik bellek alanı, çağrıldığında değer korunur
+  int int_part = (int)value;
+  int dec_part = (int)((value - int_part) * pow(10, precision));
+
+  snprintf(buffer, sizeof(buffer), "%d.%0*d", int_part, precision, abs(dec_part));
+
+  return buffer;
 }
 /* USER CODE END PFP */
 
@@ -119,7 +132,7 @@ int main(void)
   ReversePWM.setFrequency(10000);
   ForwardPWM.setFrequency(5000);
 
-  UartDMA uart1(USART1, &huart1);
+  UartParser uart1(USART1, &huart1);
   uint8_t data[64] = {0};
   char uart_buffer[64] = {0};
   uart1.start_read();
@@ -128,6 +141,11 @@ int main(void)
   int64_t encoder2_count = 0;
   float encoder1_speed = 0;
   float encoder2_speed = 0;
+
+  int64_t encoder1_count_ROS = 0;
+  int64_t encoder2_count_ROS = 0;
+  float encoder1_speed_ROS = 0;
+  float encoder2_speed_ROS = 0;
 
   float maxSpeed = 0.0f;
 
@@ -139,11 +157,23 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    // encoder1_count = encoder1.read();
+    // burada rostan verileri al
+    encoder1_count_ROS = static_cast<int64_t>(uart1.getJointPosition(1));
+    encoder2_count_ROS = static_cast<int64_t>(uart1.getJointPosition(2));
+    encoder1_speed_ROS = (uart1.getJointPosition(3));
+    encoder2_speed_ROS = (uart1.getJointPosition(4));
+
+    // aldığın verilere göre değişkenleri set et
+    cart_motor.setTargetPosition(3000);
+    cart_motor.setTargetSpeed(200); // 50 rpm
+
+    // güncel değerleri oku
+    encoder1_count = encoder1.read();
     encoder2_count = encoder2.read();
 
-    // encoder1_speed = encCaptureTimer1.getSpeed();
-    encoder2_speed = 0;
+    encoder1_speed = encCaptureTimer1.getSpeed();
+    encoder2_speed = encCaptureTimer2.getSpeed();
+
     for (int i = 0; i < 15; i++)
     {
       encoder2_speed += encCaptureTimer2.getSpeed();
@@ -155,22 +185,37 @@ int main(void)
       maxSpeed = encoder2_speed;
     }
     
-    // Format the speed values into a string
-    // sprintf(uart_buffer, "E1: %ld, E2: %ld\r\n", (long)encoder1_speed, (long)encoder2_speed);
-    cart_motor.setTargetPosition(8000);
-    cart_motor.setTargetSpeed(200); // 50 rpm
+    // güncel değerleri okuduktan sonra kontrol yap
     cart_motor.updatePosition();
 
+    // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
     // If flag set and UART is ready, print the data
     if(uartPrintFlag && uart1.is_tx_complete())
     {
         uartPrintFlag = 0;
+        // Format the speed values into a string
         int len = snprintf(uart_buffer, sizeof(uart_buffer),
             "period: %u, speed: %u, position: %ld, maxSpeed: %u\r\n", 
             encCaptureTimer2.pulsePeriod, 
             (unsigned int)encoder2_speed,
             (long int)encoder2_count,
             (unsigned int)maxSpeed
+        );
+        if (len > 0)
+        {
+            uart1.write((uint8_t*)uart_buffer, len);
+        }
+    }
+
+    if (rosPrintFlag && uart1.is_tx_complete())
+    {
+        rosPrintFlag = 0;
+        int len = snprintf(uart_buffer, sizeof(uart_buffer),
+            "pos1:%ld,pos2:%ld,spd1:%s,spd2:%s\n", 
+            (long int)encoder1_count, 
+            (long int)encoder2_count,
+            floatToStr(encoder1_speed, 2),  // 2 basamak hassasiyet
+            floatToStr(encoder2_speed, 2)
         );
         if (len > 0)
         {
