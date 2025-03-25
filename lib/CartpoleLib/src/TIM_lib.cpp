@@ -286,6 +286,12 @@ void TimIC::captureValue(void)
 {
     capture = HAL_TIM_ReadCapturedValue(_htim, _Channel);
     pulsePeriod = capture - lastCapture;
+
+    if (pulsePeriod < 0)
+    {
+        pulsePeriod = (int32_t)65535 - lastCapture + capture; // 16-bit timer overflow
+    }
+
     lastCapture = capture;
 }
 

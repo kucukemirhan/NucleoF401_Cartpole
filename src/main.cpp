@@ -43,13 +43,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t uartPrintFlag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void myCustomCallback(TIM_HandleTypeDef *htim)
+{
+  uartPrintFlag = 1;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -89,12 +92,18 @@ int main(void)
   MX_DMA_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
-  MX_TIM4_Init();
+  MX_TIM1_Init();
+
   MX_TIM5_Init();
   MX_USART1_UART_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
+  MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
+  TimIT taskTimer(TIM9, &htim9);
+  htim9.PeriodElapsedCallback = myCustomCallback;
+  taskTimer.start();
+
   EncoderIT encoder1(&htim2);
   EncoderIT encoder2(&htim5);
   encoder1.start();
@@ -105,13 +114,10 @@ int main(void)
   encCaptureTimer1.start();
   encCaptureTimer2.start();
 
-  TimPWM ReversePWM(TIM3, &htim3);
-  TimPWM ForwardPWM(TIM4, &htim4);
-  ReversePWM.setFrequency(1000);
-  ForwardPWM.setFrequency(1000);
-
-  DigitalOut ReverseEnable(ReverseEnable_GPIO_Port, ReverseEnable_Pin);
-  DigitalOut ForwardEnable(ForwardEnable_GPIO_Port, ForwardEnable_Pin);
+  TimPWM ReversePWM(TIM1, &htim1);
+  TimPWM ForwardPWM(TIM3, &htim3);
+  ReversePWM.setFrequency(10000);
+  ForwardPWM.setFrequency(5000);
 
   UartDMA uart1(USART1, &huart1);
   uint8_t data[64] = {0};
@@ -122,6 +128,10 @@ int main(void)
   int64_t encoder2_count = 0;
   float encoder1_speed = 0;
   float encoder2_speed = 0;
+
+  float maxSpeed = 0.0f;
+
+  DCmotor cart_motor(encoder2, ForwardPWM, ReversePWM, encCaptureTimer2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -133,35 +143,40 @@ int main(void)
     encoder2_count = encoder2.read();
 
     // encoder1_speed = encCaptureTimer1.getSpeed();
-    encoder2_speed = encCaptureTimer2.getSpeed();
-
+    encoder2_speed = 0;
+    for (int i = 0; i < 15; i++)
+    {
+      encoder2_speed += encCaptureTimer2.getSpeed();
+    }
+    encoder2_speed /= 15;
+    
+    if (encoder2_speed > maxSpeed)
+    {
+      maxSpeed = encoder2_speed;
+    }
+    
     // Format the speed values into a string
     // sprintf(uart_buffer, "E1: %ld, E2: %ld\r\n", (long)encoder1_speed, (long)encoder2_speed);
+    cart_motor.setTargetPosition(8000);
+    cart_motor.setTargetSpeed(200); // 50 rpm
+    cart_motor.updatePosition();
 
-    sniprintf(uart_buffer, sizeof(uart_buffer), 
-    "capture: %u, lastcapture: %u, period: %u, speed: %.2f\r\n", 
-    encCaptureTimer2.capture, 
-    encCaptureTimer2.lastCapture, 
-    encCaptureTimer2.pulsePeriod, 
-    encCaptureTimer2.getSpeed());
-
-    uart1.write((uint8_t*)uart_buffer, strlen(uart_buffer));
-    HAL_Delay(100);
-    
-
-    // uint16_t len = uart1.read(data, sizeof(data));
-    // if (len > 0)
-    // {
-    //   while(!uart1.is_tx_complete());
-    //   if (uart1.is_tx_complete())
-    //   {
-    //     //uart1.write(data, len);
-    //     uart1.write((uint8_t*)uart_buffer, strlen(uart_buffer));
-    //   }
-    // }
-
-    
-
+    // If flag set and UART is ready, print the data
+    if(uartPrintFlag && uart1.is_tx_complete())
+    {
+        uartPrintFlag = 0;
+        int len = snprintf(uart_buffer, sizeof(uart_buffer),
+            "period: %u, speed: %u, position: %ld, maxSpeed: %u\r\n", 
+            encCaptureTimer2.pulsePeriod, 
+            (unsigned int)encoder2_speed,
+            (long int)encoder2_count,
+            (unsigned int)maxSpeed
+        );
+        if (len > 0)
+        {
+            uart1.write((uint8_t*)uart_buffer, len);
+        }
+    }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

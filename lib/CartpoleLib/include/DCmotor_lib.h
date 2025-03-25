@@ -41,7 +41,6 @@ private:
 
     int64_t targetPosition;  // Desired position in steps
     float targetSpeed;       // desired speed (rpm)
-    bool isPwmRunning;
 };
 
 #endif // /* INC_STEPPER_LIB_H_ */

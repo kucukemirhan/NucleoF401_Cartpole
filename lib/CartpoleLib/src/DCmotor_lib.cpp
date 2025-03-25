@@ -5,9 +5,9 @@ encoder(encoder),
 forwardPWM(forward),
 reversePWM(reverse),
 captureTimer(capture),
+
 targetPosition(0),
-targetSpeed(0),
-isPwmRunning(false)
+targetSpeed(0)
 {
     // Assume the injected objects are pre-configured.
 }
@@ -32,7 +32,7 @@ float DCmotor::getCurrentSpeed() {
     return captureTimer.getSpeed();
 }
 
-void DCmotor::setSpeed(float rpm, bool dir) { // maps rpm to 0-100
+void DCmotor::setSpeed(float rpm, bool dir) { // maps rpm to 0-100 //max 200rpm girmelisin
     if (rpm < 0.0f) {
         rpm = 0.0f;
     }
@@ -80,7 +80,8 @@ void DCmotor::updatePosition() {
     }
 
     uint8_t dir = (error >= 0) ? 1 : 0;
-    updateSpeed();
+    setSpeed(targetSpeed, dir);
+    start(dir);
 }
 
 void DCmotor::start(bool dir)
@@ -88,20 +89,15 @@ void DCmotor::start(bool dir)
     if (dir) {
         reversePWM.stop();
         forwardPWM.start();
-        isPwmRunning = true;
     } 
     else if (!dir) {
         forwardPWM.stop();
         reversePWM.start();
-        isPwmRunning = true;
     }
 }
 
 void DCmotor::stop() 
 {
-    if (isPwmRunning) {
-        forwardPWM.stop();
-        reversePWM.stop();
-        isPwmRunning = false;
-    }
+    forwardPWM.stop();
+    reversePWM.stop();
 }

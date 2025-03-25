@@ -96,11 +96,13 @@ void EncoderIT::handleOverflow(void)
 {
     uint32_t currentCounter = __HAL_TIM_GET_COUNTER(_htim);
 
-    if ((currentCounter - rawCount) > 32767) //aşağıdaki gibi casting yapınca çalışmadı  
+    int64_t diff = static_cast<int64_t>(currentCounter) - static_cast<int64_t>(rawCount);
+
+    if (diff > 32767)
     {
         _overflow--;
     } 
-    else if (static_cast<int64_t>(currentCounter - rawCount) < -32768) 
+    else if (diff < -32768) 
     {
         _overflow++;
     }

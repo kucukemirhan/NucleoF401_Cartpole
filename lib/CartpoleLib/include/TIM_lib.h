@@ -55,7 +55,7 @@ public:
     inline void setNextARR(uint16_t arr);
     inline void setPSC(uint16_t psc);
 
-    inline void setDutyCycle(float dutyCycle);
+    void setDutyCycle(float dutyCycle);
     void setFrequency(uint16_t frequency);
 
     inline uint32_t getCNT(void);
@@ -81,9 +81,9 @@ public:
     void captureValue(void);
     float getSpeed(void);
 
-    uint32_t pulsePeriod = 0;
-    uint32_t capture = 0;
-    uint32_t lastCapture = 0;
+    int32_t pulsePeriod = 0;
+    int32_t capture = 0;
+    int32_t lastCapture = 0;
 
     protected:
     static class ISR<TimIC> ISR_List;
@@ -93,7 +93,7 @@ public:
 
     // Example parameters: encoder has 1024 pulses per revolution, and
     // TIM is set to count at 1MHz (1 tick = 1 microsecond).
-    const float pulsesPerRevolution = 64.0f;
+    const float pulsesPerRevolution = 16.0f;
     const float timerTickTime_us = 1.0f;  // 1 µs tick
 
 private:
