@@ -57,15 +57,13 @@ void myCustomCallback(TIM_HandleTypeDef *htim)
   rosPrintFlag = 1;
 }
 
-char* floatToStr(float value, int precision) {
-  static char buffer[20];  // Statik bellek alanı, çağrıldığında değer korunur
-  int int_part = (int)value;
-  int dec_part = (int)((value - int_part) * pow(10, precision));
+void ftoa(float value, char *buffer, int precision) {
+  int int_part = (int)value; // Tam sayı kısmı
+  int dec_part = (int)((value - int_part) * pow(10, precision)); // Ondalık kısmı
 
-  snprintf(buffer, sizeof(buffer), "%d.%0*d", int_part, precision, abs(dec_part));
-
-  return buffer;
+  sprintf(buffer, "%d.%0*d", int_part, precision, abs(dec_part)); // Stringe çevirme
 }
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -139,8 +137,11 @@ int main(void)
 
   int64_t encoder1_count = 0;
   int64_t encoder2_count = 0;
+  
   float encoder1_speed = 0;
   float encoder2_speed = 0;
+  char speed1_str[16];  
+  char speed2_str[16];
 
   int64_t encoder1_count_ROS = 0;
   int64_t encoder2_count_ROS = 0;
@@ -168,7 +169,12 @@ int main(void)
     cart_motor.setTargetSpeed(200); // 50 rpm
 
     // güncel değerleri oku
-    encoder1_count = encoder1.read();
+    encoder1_count = encoder1.read() % 4096;
+    if (encoder1_count < 0)
+    {
+      encoder1_count += 4096;
+    }
+    
     encoder2_count = encoder2.read();
 
     encoder1_speed = encCaptureTimer1.getSpeed();
@@ -210,12 +216,15 @@ int main(void)
     if (rosPrintFlag && uart1.is_tx_complete())
     {
         rosPrintFlag = 0;
+        ftoa(encoder1_speed, speed1_str, 2);
+        ftoa(encoder2_speed, speed2_str, 2);
+        
         int len = snprintf(uart_buffer, sizeof(uart_buffer),
             "pos1:%ld,pos2:%ld,spd1:%s,spd2:%s\n", 
             (long int)encoder1_count, 
             (long int)encoder2_count,
-            floatToStr(encoder1_speed, 2),  // 2 basamak hassasiyet
-            floatToStr(encoder2_speed, 2)
+            speed1_str,
+            speed2_str
         );
         if (len > 0)
         {
