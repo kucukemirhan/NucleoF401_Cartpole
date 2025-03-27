@@ -29,6 +29,7 @@ public:
     // call periodically to update
     void updateSpeed();
     void updatePosition();
+    void updateControl();
 
     void start(bool dir);
     void stop();
@@ -40,6 +41,7 @@ private:
     TimIC &captureTimer;
 
     int64_t targetPosition;  // Desired position in steps
+    bool _is_motor_running;
     float targetSpeed;       // desired speed (rpm)
 };
 

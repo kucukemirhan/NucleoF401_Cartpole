@@ -67,7 +67,7 @@ void DCmotor::updateSpeed() {
     
     // Komut pozitifse ileri, negatifse ters yönde çalıştır
     setSpeed(command, dir);
-    start(dir);
+    if (!_is_motor_running) start(dir);
 }
 
 void DCmotor::updatePosition() {
@@ -81,11 +81,42 @@ void DCmotor::updatePosition() {
 
     uint8_t dir = (error >= 0) ? 1 : 0;
     setSpeed(targetSpeed, dir);
-    start(dir);
+    if (!_is_motor_running) start(dir);
 }
+
+void DCmotor::updateControl()
+{
+    int64_t currentPosition = getCurrentPosition();
+    int64_t posError = targetPosition - currentPosition;
+    
+    const int32_t posTolerance = 10;
+    if (std::abs(posError) <= posTolerance) {
+        stop();
+        return;
+    }
+    
+    const float Kp_pos = 40.0f;  // her adım hata için 40 rpm
+
+    float desiredSpeed = Kp_pos * posError;
+    
+    if (desiredSpeed > 200.0f) {
+        desiredSpeed = 200.0f;
+    } else if (desiredSpeed < -200.0f) {
+        desiredSpeed = -200.0f;
+    }
+
+    targetSpeed = desiredSpeed;
+    uint8_t dir = (posError >= 0) ? 1 : 0;
+    
+    setSpeed(targetSpeed, dir);
+    if (!_is_motor_running) start(dir);
+}
+
 
 void DCmotor::start(bool dir)
 {
+    if (_is_motor_running) return; // Prevent redundant starts
+
     if (dir) {
         reversePWM.stop();
         forwardPWM.start();
@@ -94,10 +125,15 @@ void DCmotor::start(bool dir)
         forwardPWM.stop();
         reversePWM.start();
     }
+
+    _is_motor_running = true;
 }
 
 void DCmotor::stop() 
 {
+    if (!_is_motor_running) return; // Prevent redundant stops
+
     forwardPWM.stop();
     reversePWM.stop();
+    _is_motor_running = false;
 }

@@ -165,8 +165,8 @@ int main(void)
     encoder2_speed_ROS = (uart1.getJointPosition(4));
 
     // aldığın verilere göre değişkenleri set et
-    cart_motor.setTargetPosition(3000);
-    cart_motor.setTargetSpeed(200); // 50 rpm
+    cart_motor.setTargetPosition(encoder2_count_ROS);
+    // cart_motor.setTargetSpeed(25); // 50 rpm
 
     // güncel değerleri oku
     encoder1_count = encoder1.read() % 4096;
@@ -192,7 +192,8 @@ int main(void)
     }
     
     // güncel değerleri okuduktan sonra kontrol yap
-    cart_motor.updatePosition();
+    // cart_motor.updatePosition();
+    cart_motor.updateControl();
 
     // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
     // If flag set and UART is ready, print the data
@@ -220,11 +221,11 @@ int main(void)
         ftoa(encoder2_speed, speed2_str, 2);
         
         int len = snprintf(uart_buffer, sizeof(uart_buffer),
-            "pos1:%ld,pos2:%ld,spd1:%s,spd2:%s\n", 
-            (long int)encoder1_count, 
+            "%ld,%s,%ld,%s\n", 
             (long int)encoder2_count,
-            speed1_str,
-            speed2_str
+            speed2_str,
+            (long int)encoder1_count, 
+            speed1_str
         );
         if (len > 0)
         {
