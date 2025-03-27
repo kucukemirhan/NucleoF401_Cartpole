@@ -166,7 +166,7 @@ int main(void)
 
     // aldığın verilere göre değişkenleri set et
     cart_motor.setTargetPosition(encoder2_count_ROS);
-    // cart_motor.setTargetSpeed(25); // 50 rpm
+    cart_motor.setTargetSpeed(100); // 50 rpm
 
     // güncel değerleri oku
     encoder1_count = encoder1.read() % 4096;
@@ -192,8 +192,8 @@ int main(void)
     }
     
     // güncel değerleri okuduktan sonra kontrol yap
-    // cart_motor.updatePosition();
-    cart_motor.updateControl();
+    cart_motor.updatePosition();
+    // cart_motor.updateControl();
 
     // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
     // If flag set and UART is ready, print the data

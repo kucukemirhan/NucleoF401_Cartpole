@@ -24,7 +24,7 @@ public:
     int64_t getCurrentPosition();
     float getCurrentSpeed();
 
-    void setSpeed(float rpm, bool dir);
+    void setSpeed(float rpm);
 
     // call periodically to update
     void updateSpeed();
@@ -41,8 +41,10 @@ private:
     TimIC &captureTimer;
 
     int64_t targetPosition;  // Desired position in steps
+    float targetSpeed = 0;       // desired speed (rpm)
     bool _is_motor_running;
-    float targetSpeed;       // desired speed (rpm)
+    uint8_t dir;
+    uint8_t last_dir;
 };
 
 #endif // /* INC_STEPPER_LIB_H_ */

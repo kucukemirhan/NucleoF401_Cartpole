@@ -32,21 +32,27 @@ float DCmotor::getCurrentSpeed() {
     return captureTimer.getSpeed();
 }
 
-void DCmotor::setSpeed(float rpm, bool dir) { // maps rpm to 0-100 //max 200rpm girmelisin
-    if (rpm < 0.0f) {
-        rpm = 0.0f;
-    }
-    else if (rpm > 200.0f) {
+void DCmotor::setSpeed(float rpm) {
+    // rpm değerini -200 ile 200 arasında sınırlıyoruz.
+    if (rpm > 200.0f) {
         rpm = 200.0f;
+    } else if (rpm < -200.0f) {
+        rpm = -200.0f;
     }
-
-    rpm = rpm * 100 / 200.0f;
-
-    if (dir) {
-        forwardPWM.setDutyCycle(rpm);
-    }
-    else if (!dir) {
-        reversePWM.setDutyCycle(rpm);
+    
+    // Duty cycle hesaplaması: |rpm| değerini 0-100 aralığına eşliyoruz.
+    float dutyCycle = (std::abs(rpm) * 100) / 200.0f;
+    
+    // Eğer rpm pozitifse, ileri (forward) PWM'yi aktif ediyoruz,
+    // eğer negatifse, geri (reverse) PWM'yi aktif ediyoruz.
+    if (rpm >= 0) {
+        forwardPWM.setDutyCycle(dutyCycle);
+        reversePWM.setDutyCycle(0); // Reverse PWM'yi kapatıyoruz.
+        last_dir = 1;
+    } else {
+        reversePWM.setDutyCycle(dutyCycle);
+        forwardPWM.setDutyCycle(0); // Forward PWM'yi kapatıyoruz.
+        last_dir = 0;
     }
 }
 
@@ -61,12 +67,15 @@ void DCmotor::updateSpeed() {
 
     uint8_t dir = (error >= 0) ? 1 : 0;
 
+    if (_is_motor_running && (dir != last_dir)) {
+        stop();
+    }
+
     // Basit oransal kontrol
     const float Kp = 1.0f;
     float command = Kp * std::abs(error);
     
-    // Komut pozitifse ileri, negatifse ters yönde çalıştır
-    setSpeed(command, dir);
+    setSpeed(command);
     if (!_is_motor_running) start(dir);
 }
 
@@ -80,7 +89,13 @@ void DCmotor::updatePosition() {
     }
 
     uint8_t dir = (error >= 0) ? 1 : 0;
-    setSpeed(targetSpeed, dir);
+
+    if (_is_motor_running && (dir != last_dir)) {
+        stop();
+    }
+
+    float effectiveSpeed = (dir == 1) ? targetSpeed : -targetSpeed;
+    setSpeed(effectiveSpeed);
     if (!_is_motor_running) start(dir);
 }
 
@@ -97,18 +112,21 @@ void DCmotor::updateControl()
     
     const float Kp_pos = 40.0f;  // her adım hata için 40 rpm
 
-    float desiredSpeed = Kp_pos * posError;
+    float targetSpeed = Kp_pos * posError;
     
-    if (desiredSpeed > 200.0f) {
-        desiredSpeed = 200.0f;
-    } else if (desiredSpeed < -200.0f) {
-        desiredSpeed = -200.0f;
+    if (targetSpeed > 200.0f) {
+        targetSpeed = 100.0f;
+    } else if (targetSpeed < -200.0f) {
+        targetSpeed = -100.0f;
     }
 
-    targetSpeed = desiredSpeed;
     uint8_t dir = (posError >= 0) ? 1 : 0;
     
-    setSpeed(targetSpeed, dir);
+    if (_is_motor_running && (dir != last_dir)) {
+        stop();
+    }
+
+    setSpeed(targetSpeed);
     if (!_is_motor_running) start(dir);
 }
 
