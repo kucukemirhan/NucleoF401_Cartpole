@@ -192,8 +192,8 @@ int main(void)
     }
     
     // güncel değerleri okuduktan sonra kontrol yap
-    cart_motor.updatePosition();
-    // cart_motor.updateControl();
+    // cart_motor.updatePosition();
+    cart_motor.updateControl();
 
     // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
     // If flag set and UART is ready, print the data

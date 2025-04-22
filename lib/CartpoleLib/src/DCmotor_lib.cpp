@@ -96,7 +96,7 @@ void DCmotor::updatePosition() {
 
     float effectiveSpeed = (dir == 1) ? targetSpeed : -targetSpeed;
     setSpeed(effectiveSpeed);
-    if (!_is_motor_running) start(dir);
+    start(dir);
 }
 
 void DCmotor::updateControl()
@@ -110,7 +110,7 @@ void DCmotor::updateControl()
         return;
     }
     
-    const float Kp_pos = 40.0f;  // her adım hata için 40 rpm
+    const float Kp_pos = 0.025f;  // her adım hata için 0.025 rpm
 
     float targetSpeed = Kp_pos * posError;
     
@@ -127,7 +127,7 @@ void DCmotor::updateControl()
     }
 
     setSpeed(targetSpeed);
-    if (!_is_motor_running) start(dir);
+    start(dir);
 }
 
 
