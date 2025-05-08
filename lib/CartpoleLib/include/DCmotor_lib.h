@@ -42,7 +42,7 @@ private:
 
     int64_t targetPosition;  // Desired position in steps
     float targetSpeed = 0;       // desired speed (rpm)
-    bool _is_motor_running;
+    bool _is_motor_running = false;
     uint8_t dir;
     uint8_t last_dir;
 };

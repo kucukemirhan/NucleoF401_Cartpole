@@ -159,14 +159,14 @@ int main(void)
   {
     /* USER CODE END WHILE */
     // burada rostan verileri al
-    encoder1_count_ROS = static_cast<int64_t>(uart1.getJointPosition(1));
-    encoder2_count_ROS = static_cast<int64_t>(uart1.getJointPosition(2));
+    // encoder1_count_ROS = static_cast<int64_t>(uart1.getJointPosition(1));
+    // encoder2_count_ROS = static_cast<int64_t>(uart1.getJointPosition(2));
     encoder1_speed_ROS = (uart1.getJointPosition(3));
-    encoder2_speed_ROS = (uart1.getJointPosition(4));
+    // encoder2_speed_ROS = (uart1.getJointPosition(4));
 
     // aldığın verilere göre değişkenleri set et
-    cart_motor.setTargetPosition(encoder2_count_ROS);
-    cart_motor.setTargetSpeed(100); // 50 rpm
+    // cart_motor.setTargetPosition(encoder2_count_ROS);
+    cart_motor.setTargetSpeed(encoder1_speed_ROS); // 50 rpm
 
     // güncel değerleri oku
     encoder1_count = encoder1.read() % 4096;
@@ -193,7 +193,7 @@ int main(void)
     
     // güncel değerleri okuduktan sonra kontrol yap
     // cart_motor.updatePosition();
-    cart_motor.updateControl();
+    cart_motor.updateSpeed();
 
     // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
     // If flag set and UART is ready, print the data

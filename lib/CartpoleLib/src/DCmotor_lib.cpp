@@ -34,14 +34,14 @@ float DCmotor::getCurrentSpeed() {
 
 void DCmotor::setSpeed(float rpm) {
     // rpm değerini -200 ile 200 arasında sınırlıyoruz.
-    if (rpm > 200.0f) {
-        rpm = 200.0f;
-    } else if (rpm < -200.0f) {
-        rpm = -200.0f;
+    if (rpm > 100.0f) {
+        rpm = 100.0f;
+    } else if (rpm < -100.0f) {
+        rpm = -100.0f;
     }
     
     // Duty cycle hesaplaması: |rpm| değerini 0-100 aralığına eşliyoruz.
-    float dutyCycle = (std::abs(rpm) * 100) / 200.0f;
+    float dutyCycle = (std::abs(rpm) * 100) / 100.0f;
     
     // Eğer rpm pozitifse, ileri (forward) PWM'yi aktif ediyoruz,
     // eğer negatifse, geri (reverse) PWM'yi aktif ediyoruz.
@@ -57,26 +57,14 @@ void DCmotor::setSpeed(float rpm) {
 }
 
 void DCmotor::updateSpeed() {
-    float currentSpeed = getCurrentSpeed();
-
-    float error = targetSpeed - currentSpeed;
-    if (std::abs(error) <= 1) {
-        this->stop();
-        return;
-    }
-
-    uint8_t dir = (error >= 0) ? 1 : 0;
+    dir = (targetSpeed >= 0) ? 1 : 0;
 
     if (_is_motor_running && (dir != last_dir)) {
         stop();
     }
-
-    // Basit oransal kontrol
-    const float Kp = 1.0f;
-    float command = Kp * std::abs(error);
     
-    setSpeed(command);
-    if (!_is_motor_running) start(dir);
+    setSpeed(targetSpeed);
+    start(dir);
 }
 
 void DCmotor::updatePosition() {

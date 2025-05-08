@@ -141,4 +141,5 @@ void UartDMA::put(uint16_t index, uint16_t Size)
         return;
     }
     last_size = Size;
+    start_read();
 }
