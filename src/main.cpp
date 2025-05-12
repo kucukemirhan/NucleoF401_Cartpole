@@ -95,12 +95,10 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  DMA::init();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM1_Init();
@@ -130,9 +128,11 @@ int main(void)
   ReversePWM.setFrequency(10000);
   ForwardPWM.setFrequency(5000);
 
-  UartParser uart1(USART1, &huart1);
+  UartIT uart1(USART1, &huart1);
   uint8_t data[64] = {0};
   char uart_buffer[64] = {0};
+  memset(uart_buffer, 0, sizeof(uart_buffer));
+  
   uart1.start_read();
 
   int64_t encoder1_count = 0;
@@ -148,24 +148,16 @@ int main(void)
   float encoder1_speed_ROS = 0;
   float encoder2_speed_ROS = 0;
 
-  float maxSpeed = 0.0f;
-
   DCmotor cart_motor(encoder2, ForwardPWM, ReversePWM, encCaptureTimer2);
-  /* USER CODE END 2 */
+  // /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-    // burada rostan verileri al
-    // encoder1_count_ROS = static_cast<int64_t>(uart1.getJointPosition(1));
-    // encoder2_count_ROS = static_cast<int64_t>(uart1.getJointPosition(2));
-    encoder1_speed_ROS = (uart1.getJointPosition(3));
-    // encoder2_speed_ROS = (uart1.getJointPosition(4));
 
     // aldığın verilere göre değişkenleri set et
-    // cart_motor.setTargetPosition(encoder2_count_ROS);
     cart_motor.setTargetSpeed(encoder1_speed_ROS); // 50 rpm
 
     // güncel değerleri oku
@@ -180,40 +172,23 @@ int main(void)
     encoder1_speed = encCaptureTimer1.getSpeed();
     encoder2_speed = encCaptureTimer2.getSpeed();
 
-    for (int i = 0; i < 15; i++)
-    {
-      encoder2_speed += encCaptureTimer2.getSpeed();
+    uint16_t len = uart1.read((uint8_t*)uart_buffer, sizeof(uart_buffer) - 1);
+    if (len > 0) {
+        uart_buffer[len] = '\0';
+        char *p = (char*)uart_buffer;
+
+        // Yalnızca başında 's' varsa ilerle ve çevir
+        if (*p == 's' || *p == 'S') {
+            p++;
+            encoder1_speed_ROS = strtof(p, nullptr);
+        }
+        // başında 's' yoksa buraya girmeden geçer
     }
-    encoder2_speed /= 15;
     
-    if (encoder2_speed > maxSpeed)
-    {
-      maxSpeed = encoder2_speed;
-    }
-    
-    // güncel değerleri okuduktan sonra kontrol yap
-    // cart_motor.updatePosition();
     cart_motor.updateSpeed();
 
+  
     // HABERLEŞME KISMI . . . . . . . . . . . . . . . . . . . . . . . . . . 
-    // If flag set and UART is ready, print the data
-    if(uartPrintFlag && uart1.is_tx_complete())
-    {
-        uartPrintFlag = 0;
-        // Format the speed values into a string
-        int len = snprintf(uart_buffer, sizeof(uart_buffer),
-            "period: %u, speed: %u, position: %ld, maxSpeed: %u\r\n", 
-            encCaptureTimer2.pulsePeriod, 
-            (unsigned int)encoder2_speed,
-            (long int)encoder2_count,
-            (unsigned int)maxSpeed
-        );
-        if (len > 0)
-        {
-            uart1.write((uint8_t*)uart_buffer, len);
-        }
-    }
-
     if (rosPrintFlag && uart1.is_tx_complete())
     {
         rosPrintFlag = 0;

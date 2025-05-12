@@ -4,7 +4,6 @@
 #include "usart.h"
 #include "ISR_obj.h"
 #include "CircularBuffer.h"
-#include "dma_hal.h"
 
 #define UART_COUNT (1)
 #define RX_BUFFER_SIZE (64)
