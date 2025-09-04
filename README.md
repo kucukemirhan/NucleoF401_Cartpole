@@ -43,8 +43,7 @@ The STM32 runs low-level drivers for **2 encoders and 1 DC motor**, while all hi
 - **Motor driver**: H-bridge or similar, I used BTS7960  
 - **DC motor** with incremental encoder  
 - **Second encoder** (for pendulum or additional measurement)  
-- **USB TTL Converter** for UART (to ROS 2 serial bridge)  
-- Common ground between motor driver, encoders, and STM32  
+- **USB TTL Converter** for UART (to ROS 2 serial bridge)   
 
 ---
 
